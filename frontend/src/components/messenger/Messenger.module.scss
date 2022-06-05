@@ -1,0 +1,46 @@
+.container {
+    display: flex;
+    flex-direction: column;
+
+    .topBar {
+        align-self: stretch;
+        padding: 10px 16px;
+        background: white;
+        display: flex;
+        flex-direction: row;
+        //border-bottom: 1px solid #e2e3e4;
+
+        .secretKeyInput {
+            flex: 1;
+        }
+    }
+
+    .messagesContainer {
+        flex: 1;
+        overflow-y: auto;//scroll;
+        max-height: 100%;
+        display: flex;
+        flex-direction: column;
+        //align-items: center;
+
+        .messages {
+            //width: 100%;
+            //max-width: var(--container-max-width);
+            background: white;
+            padding: 0 5px 5px 5px;
+        }
+    }
+
+    .inputContainer {
+        display: flex;
+        flex-direction: column;
+        //align-items: center;
+        background: white;
+        border-top: 1px solid #e2e3e4;
+
+        .messageInput {
+            //width: 100%;
+            //max-width: var(--container-max-width);
+        }
+    }
+}
