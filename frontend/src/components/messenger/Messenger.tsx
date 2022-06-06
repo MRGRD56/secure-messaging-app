@@ -28,6 +28,7 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const newMessageRequestAbortControllerRef = useRef<AbortController>();
     const newMessageRequestAbortTimeoutRef = useRef<number>();
+    const canChangeSecretKey = useRef<boolean>(false);
 
     useDidMount(() => {
         if (!clientId) {
@@ -111,6 +112,11 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
     });
 
     useEffect(() => {
+        if (!canChangeSecretKey.current) {
+            canChangeSecretKey.current = true;
+            return;
+        }
+
         if (newMessageRequestAbortTimeoutRef.current !== undefined) {
             window.clearTimeout(newMessageRequestAbortTimeoutRef.current);
         }
