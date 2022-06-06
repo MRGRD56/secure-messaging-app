@@ -12,6 +12,7 @@ import classNames from 'classnames';
 import {useDidMount, useLocalstorageState, useSessionstorageState} from 'rooks';
 import {TextField} from '@mui/material';
 import {v4} from 'uuid';
+import axios from 'axios';
 
 interface Props extends HTMLProps<HTMLDivElement> {
 }
@@ -25,6 +26,8 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
 
     const requestParamsRef = useAutoRef({secretKey});
     const messagesContainerRef = useRef<HTMLDivElement>(null);
+    const newMessageRequestAbortControllerRef = useRef<AbortController>();
+    const newMessageRequestAbortTimeoutRef = useRef<number>();
 
     useDidMount(() => {
         if (!clientId) {
@@ -77,27 +80,44 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
         }
     };
 
-    useEffect(() => {
+    useDidMount(() => {
         (async () => {
             while (true) {
-                const {secretKey} = requestParamsRef.current;
+                try {
+                    const {secretKey} = requestParamsRef.current;
 
-                const newMessages = await getNewMessages({
-                    clientId,
-                    keyHash: secretKey
-                }, secretKey);
+                    const abortController = new AbortController();
+                    newMessageRequestAbortControllerRef.current = abortController;
+                    const newMessages = await getNewMessages({
+                        clientId,
+                        keyHash: secretKey
+                    }, secretKey, abortController.signal);
 
-                setMessages(messages => ([
-                    ...messages,
-                    ...newMessages
-                ]));
+                    setMessages(messages => [
+                        ...messages,
+                        ...newMessages
+                    ]);
 
-                if (newMessages.length > 0) {
-                    handleNewMessages();
+                    if (newMessages.length > 0) {
+                        handleNewMessages();
+                    }
+                } catch (error) {
+                    if (!axios.isCancel(error)) {
+                        throw error;
+                    }
                 }
             }
         })();
-    }, []);
+    });
+
+    useEffect(() => {
+        if (newMessageRequestAbortTimeoutRef.current !== undefined) {
+            window.clearTimeout(newMessageRequestAbortTimeoutRef.current);
+        }
+        newMessageRequestAbortTimeoutRef.current = window.setTimeout(() => {
+            newMessageRequestAbortControllerRef.current?.abort();
+        }, 1000);
+    }, [secretKey]);
 
     return (
         <div className={classNames(styles.container, className)} {...props}>

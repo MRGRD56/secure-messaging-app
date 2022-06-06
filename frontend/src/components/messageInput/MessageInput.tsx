@@ -1,4 +1,4 @@
-import React, {ChangeEvent, FormEvent, FunctionComponent, HTMLProps, KeyboardEvent} from 'react';
+import React, {ChangeEvent, FormEvent, FunctionComponent, HTMLProps, KeyboardEvent, useCallback, useRef} from 'react';
 import classNames from 'classnames';
 import styles from './MessageInput.module.scss';
 import SendIcon from '@mui/icons-material/Send';
@@ -11,6 +11,8 @@ interface Props extends Omit<HTMLProps<HTMLFormElement>, 'onSubmit' | 'value' | 
 }
 
 const MessageInput: FunctionComponent<Props> = ({onSend, className, value, onTextChange, ...props}) => {
+    const inputRef = useRef<HTMLTextAreaElement>(null);
+
     const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         onSend();
@@ -35,6 +37,15 @@ const MessageInput: FunctionComponent<Props> = ({onSend, className, value, onTex
         }
     };
 
+    const handleSendButtonClick = useCallback(() => {
+        const input = inputRef.current;
+        if (!input) {
+            return;
+        }
+
+        input.focus();
+    }, []);
+
     return (
         <form {...props} className={classNames(styles.container, className)} onSubmit={handleFormSubmit}>
             <textarea
@@ -44,8 +55,11 @@ const MessageInput: FunctionComponent<Props> = ({onSend, className, value, onTex
                 onChange={handleTextChange}
                 rows={1}
                 onKeyDown={handleInputKeyDown}
+                ref={inputRef}
+                id="message-input-field"
             />
-            <IconButton type="submit" color={value ? 'primary' : 'default'} className={styles.sendButton}>
+            <IconButton type="submit" color={value ? 'primary' : 'default'} className={styles.sendButton}
+                        onClick={handleSendButtonClick}>
                 <SendIcon/>
             </IconButton>
         </form>
