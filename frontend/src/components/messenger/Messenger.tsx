@@ -13,11 +13,16 @@ import {useDidMount, useLocalstorageState, useSessionstorageState} from 'rooks';
 import {TextField} from '@mui/material';
 import {v4} from 'uuid';
 import axios from 'axios';
+import useQueryParams from '../../hooks/useQueryParams';
+import {isString} from 'lodash';
+import {Base64} from 'js-base64';
 
 interface Props extends HTMLProps<HTMLDivElement> {
 }
 
 const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
+    const {kb: querySecretKeyBase64, k: querySecretKeyText} = useQueryParams();
+
     const [messages, setMessages] = useState<MessageOut[]>([]);
     const [secretKey, setSecretKey] = useLocalstorageState<string>('secure-messaging-app:secretKey', '');
     const [clientId, setClientId] = useSessionstorageState<string>('secure-messaging-app:clientId', v4());
@@ -29,6 +34,14 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
     const newMessageRequestAbortControllerRef = useRef<AbortController>();
     const newMessageRequestAbortTimeoutRef = useRef<number>();
     const canChangeSecretKey = useRef<boolean>(false);
+
+    useDidMount(() => {
+        if (isString(querySecretKeyText) && querySecretKeyText.length) {
+            setSecretKey(querySecretKeyText);
+        } else if (isString(querySecretKeyBase64) && querySecretKeyBase64.length) {
+            setSecretKey(Base64.decode(querySecretKeyBase64));
+        }
+    });
 
     useDidMount(() => {
         if (!clientId) {
