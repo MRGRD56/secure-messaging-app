@@ -8,9 +8,10 @@ interface Props extends Omit<HTMLProps<HTMLFormElement>, 'onSubmit' | 'value' | 
     onSend(): void;
     value: string;
     onTextChange(value: string): void;
+    secretKey: string;
 }
 
-const MessageInput: FunctionComponent<Props> = ({onSend, className, value, onTextChange, ...props}) => {
+const MessageInput: FunctionComponent<Props> = ({onSend, className, value, onTextChange, secretKey, ...props}) => {
     const inputRef = useRef<HTMLTextAreaElement>(null);
 
     const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -58,7 +59,9 @@ const MessageInput: FunctionComponent<Props> = ({onSend, className, value, onTex
                 ref={inputRef}
                 id="message-input-field"
             />
-            <IconButton type="submit" color={value ? 'primary' : 'default'} className={styles.sendButton}
+            <IconButton type="submit"
+                        color={value && secretKey ? 'primary' : 'default'}
+                        className={styles.sendButton}
                         onClick={handleSendButtonClick}>
                 <SendIcon/>
             </IconButton>

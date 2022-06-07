@@ -2,19 +2,6 @@
     display: flex;
     flex-direction: column;
 
-    .topBar {
-        align-self: stretch;
-        padding: 10px 16px;
-        background: white;
-        display: flex;
-        flex-direction: row;
-        //border-bottom: 1px solid #e2e3e4;
-
-        .secretKeyInput {
-            flex: 1;
-        }
-    }
-
     .messagesContainer {
         flex: 1;
         overflow-y: auto;//scroll;
@@ -27,7 +14,7 @@
             //width: 100%;
             //max-width: var(--container-max-width);
             background: white;
-            padding: 0 5px 5px 5px;
+            padding: 5px;
         }
     }
 

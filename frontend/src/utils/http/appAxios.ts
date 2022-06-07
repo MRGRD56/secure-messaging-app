@@ -1,9 +1,8 @@
 import axios from 'axios';
-
-const {hostname, protocol} = window.location;
+import {API_BASE_URI} from '../../constants';
 
 const appAxios = axios.create({
-    baseURL: `${protocol}//${hostname}:9021`
+    baseURL: API_BASE_URI
 });
 
 export default appAxios;

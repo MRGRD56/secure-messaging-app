@@ -1,0 +1,12 @@
+.topPanel {
+    align-self: stretch;
+    padding: 10px 16px;
+    background: white;
+    display: flex;
+    flex-direction: row;
+    //border-bottom: 1px solid #e2e3e4;
+
+    .secretKeyInput {
+        flex: 1;
+    }
+}

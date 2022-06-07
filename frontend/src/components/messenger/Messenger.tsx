@@ -10,12 +10,12 @@ import getNewMessages from '../../actions/api/getNewMessages';
 import MessageInput from '../messageInput/MessageInput';
 import classNames from 'classnames';
 import {useDidMount, useLocalstorageState, useSessionstorageState} from 'rooks';
-import {TextField} from '@mui/material';
 import {v4} from 'uuid';
 import axios from 'axios';
 import useQueryParams from '../../hooks/useQueryParams';
 import {isString} from 'lodash';
 import {Base64} from 'js-base64';
+import TopPanel from '../topPanel/TopPanel';
 
 interface Props extends HTMLProps<HTMLDivElement> {
 }
@@ -24,22 +24,31 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
     const {kb: querySecretKeyBase64, k: querySecretKeyText} = useQueryParams();
 
     const [messages, setMessages] = useState<MessageOut[]>([]);
-    const [secretKey, setSecretKey] = useLocalstorageState<string>('secure-messaging-app:secretKey', '');
+    const [manualSecretKey, setManualSecretKey] = useLocalstorageState<string>('secure-messaging-app:secretKey', '');
+    const [urlSecretKey, setUrlSecretKey] = useState<string>();
     const [clientId, setClientId] = useSessionstorageState<string>('secure-messaging-app:clientId', v4());
-
     const [newMessage, setNewMessage] = useState<string>('');
 
-    const requestParamsRef = useAutoRef({secretKey});
+    const actualSecretKey = urlSecretKey || manualSecretKey;
+
+    const requestParamsRef = useAutoRef({actualSecretKey});
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const newMessageRequestAbortControllerRef = useRef<AbortController>();
     const newMessageRequestAbortTimeoutRef = useRef<number>();
     const canChangeSecretKey = useRef<boolean>(false);
 
     useDidMount(() => {
-        if (isString(querySecretKeyText) && querySecretKeyText.length) {
-            setSecretKey(querySecretKeyText);
-        } else if (isString(querySecretKeyBase64) && querySecretKeyBase64.length) {
-            setSecretKey(Base64.decode(querySecretKeyBase64));
+        const isQuerySecretKeyTextUsed = isString(querySecretKeyText) && querySecretKeyText.length > 0;
+        const isQuerySecretKeyBase64Used = isString(querySecretKeyBase64) && querySecretKeyBase64.length > 0;
+
+        if (isQuerySecretKeyTextUsed === isQuerySecretKeyBase64Used) {
+            return;
+        }
+
+        if (isQuerySecretKeyTextUsed) {
+            setUrlSecretKey(querySecretKeyText);
+        } else if (isQuerySecretKeyBase64Used) {
+            setUrlSecretKey(Base64.decode(querySecretKeyBase64));
         }
     });
 
@@ -53,6 +62,8 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
         if (!newMessage.length) {
             return;
         }
+
+        const secretKey = actualSecretKey;
 
         const sentMessage: MessageIn = {
             clientId,
@@ -98,7 +109,7 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
         (async () => {
             while (true) {
                 try {
-                    const {secretKey} = requestParamsRef.current;
+                    const secretKey = requestParamsRef.current.actualSecretKey;
 
                     const abortController = new AbortController();
                     newMessageRequestAbortControllerRef.current = abortController;
@@ -136,22 +147,22 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
         newMessageRequestAbortTimeoutRef.current = window.setTimeout(() => {
             newMessageRequestAbortControllerRef.current?.abort();
         }, 1000);
-    }, [secretKey]);
+    }, [actualSecretKey]);
 
     return (
         <div className={classNames(styles.container, className)} {...props}>
-            <div className={styles.topBar}>
-                {/*<Typography variant="h6" component="div" sx={{flexGrow: 1}}>*/}
-                {/*    Secure Messenger*/}
-                {/*</Typography>*/}
-                <TextField className={styles.secretKeyInput} label="Secret key" variant="standard" type="password"
-                           value={secretKey} onChange={e => setSecretKey(e.target.value)}/>
-            </div>
+            {!urlSecretKey && (
+                <TopPanel secretKey={manualSecretKey} onSecretKeyChange={setManualSecretKey}/>
+            )}
             <div className={styles.messagesContainer} ref={messagesContainerRef}>
                 <Messages className={styles.messages} messages={messages} clientId={clientId}/>
             </div>
             <div className={styles.inputContainer}>
-                <MessageInput className={styles.messageInput} value={newMessage} onTextChange={setNewMessage} onSend={handleSend}/>
+                <MessageInput className={styles.messageInput}
+                              value={newMessage}
+                              onTextChange={setNewMessage}
+                              onSend={handleSend}
+                              secretKey={actualSecretKey}/>
             </div>
         </div>
     );
