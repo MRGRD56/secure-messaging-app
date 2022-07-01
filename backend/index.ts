@@ -11,6 +11,7 @@ import * as events from 'events';
 import * as rxjs from 'rxjs';
 import {Subject} from 'rxjs';
 import * as net from 'net';
+import TypingOut from '@secure-messaging-app/common/types/TypingOut';
 
 const GET_MESSAGES_TIMEOUT = 25_000; //ms
 const PORT = 9021;
@@ -24,11 +25,13 @@ app.use(cors());
 interface BackendState {
     clients: Record<string, Client>;
     newMessage$: Subject<MessageOut[]>;
+    typing$: Subject<TypingOut[]>;
 }
 
 const state: BackendState = {
     clients: {},
-    newMessage$: new Subject<MessageOut[]>()
+    newMessage$: new Subject<MessageOut[]>(),
+    typing$: new Subject<TypingOut[]>()
 };
 
 app.post('/api/message/send', (req, res) => {

@@ -1,0 +1,25 @@
+x-base: &base
+  environment:
+    ENV: prod
+
+services:
+  backend:
+    image: backend
+    restart: always
+    build:
+      context: .
+      args:
+        APP_NAME: backend
+    ports:
+      - "9021:9021"
+    <<: *base
+  frontend:
+    image: frontend
+    restart: always
+    build:
+      context: .
+      args:
+        APP_NAME: frontend
+    ports:
+      - "9022:9022"
+    <<: *base
