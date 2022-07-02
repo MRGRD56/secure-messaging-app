@@ -1,9 +1,9 @@
 import React, {FunctionComponent} from 'react';
 import styles from './Messages.module.scss';
-import MessageOut from '@secure-messaging-app/common/types/MessageOut';
 import Message from '../message/Message';
 import classNames from 'classnames';
 import {Typography} from '@mui/material';
+import MessageOut from '../../common/types/MessageOut';
 
 interface Props {
     messages: MessageOut[];

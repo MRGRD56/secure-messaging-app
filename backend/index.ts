@@ -1,17 +1,17 @@
 import * as express from 'express';
-import MessageIn from '@secure-messaging-app/common/types/MessageIn';
 import {isEmpty, isString} from 'lodash';
-import GetNewMessagesParams from '@secure-messaging-app/common/types/GetNewMessagesParams';
-import MessageOut from '@secure-messaging-app/common/types/MessageOut';
 import * as moment from 'moment';
-import Client from '@secure-messaging-app/common/types/Client';
 import * as cors from 'cors';
 import {v4} from 'uuid';
 import * as events from 'events';
 import * as rxjs from 'rxjs';
 import {Subject} from 'rxjs';
 import * as net from 'net';
-import TypingOut from '@secure-messaging-app/common/types/TypingOut';
+import Client from './common/types/Client';
+import MessageOut from './common/types/MessageOut';
+import TypingOut from './common/types/TypingOut';
+import MessageIn from './common/types/MessageIn';
+import GetNewMessagesParams from './common/types/GetNewMessagesParams';
 
 const GET_MESSAGES_TIMEOUT = 25_000; //ms
 const PORT = 9021;

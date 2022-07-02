@@ -1,6 +1,6 @@
-import MessageIn from '@secure-messaging-app/common/types/MessageIn';
-import MessageOut from '@secure-messaging-app/common/types/MessageOut';
+import MessageIn from '../common/types/MessageIn';
 import sha256 from './sha256';
+import MessageOut from '../common/types/MessageOut';
 
 export const encryptMessage = async (message: MessageIn, key: string): Promise<MessageIn> => ({
     ...message,

@@ -1,7 +1,8 @@
 x-base: &base
   restart: always
   environment:
-    ENV: prod
+    ENV: production
+    NODE_ENV: production
 
 services:
 #  common:

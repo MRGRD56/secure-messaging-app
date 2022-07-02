@@ -1,9 +1,7 @@
 import React, {FunctionComponent, HTMLProps, useEffect, useRef, useState} from 'react';
 import styles from './Messenger.module.scss';
-import MessageOut from '@secure-messaging-app/common/types/MessageOut';
 import Messages from '../messages/Messages';
 import useAutoRef from '../../hooks/useAutoRef';
-import MessageIn from '@secure-messaging-app/common/types/MessageIn';
 import sendMessage from '../../actions/api/sendMessage';
 import moment from 'moment';
 import getNewMessages from '../../actions/api/getNewMessages';
@@ -16,6 +14,8 @@ import useQueryParams from '../../hooks/useQueryParams';
 import {isString} from 'lodash';
 import {Base64} from 'js-base64';
 import TopPanel from '../topPanel/TopPanel';
+import MessageOut from '../../common/types/MessageOut';
+import MessageIn from '../../common/types/MessageIn';
 
 interface Props extends HTMLProps<HTMLDivElement> {
 }

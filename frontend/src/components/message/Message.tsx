@@ -1,8 +1,8 @@
 import React, {FunctionComponent, useMemo} from 'react';
-import MessageOut from '@secure-messaging-app/common/types/MessageOut';
 import moment from 'moment';
 import styles from './Message.module.scss';
 import classNames from 'classnames';
+import MessageOut from '../../common/types/MessageOut';
 
 interface Props {
     message: MessageOut;

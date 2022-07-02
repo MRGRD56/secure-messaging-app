@@ -1,8 +1,8 @@
-import MessageOut from '@secure-messaging-app/common/types/MessageOut';
 import appAxios from '../../utils/http/appAxios';
-import GetNewMessagesParams from '@secure-messaging-app/common/types/GetNewMessagesParams';
 import {decryptMessage} from '../../utils/MessageCrypto';
 import sha256 from '../../utils/sha256';
+import MessageOut from '../../common/types/MessageOut';
+import GetNewMessagesParams from '../../common/types/GetNewMessagesParams';
 
 const getNewMessages = async (params: GetNewMessagesParams, key: string, signal?: AbortSignal): Promise<MessageOut[]> => {
     const response = await appAxios.post<MessageOut[]>('/api/message/get-new', {
