@@ -1,25 +1,37 @@
 x-base: &base
+  restart: always
   environment:
     ENV: prod
 
 services:
+#  common:
+#    image: common
+#    build:
+#      context: .
+#      args:
+#        APP_NAME: common
+#    volumes:
+#      - ./common:/app/common
+#    <<: *base
   backend:
     image: backend
-    restart: always
     build:
       context: .
       args:
         APP_NAME: backend
+#    depends_on:
+#      - common
     ports:
       - "9021:9021"
     <<: *base
   frontend:
     image: frontend
-    restart: always
     build:
       context: .
       args:
         APP_NAME: frontend
+#    depends_on:
+#      - common
     ports:
       - "9022:9022"
     <<: *base
