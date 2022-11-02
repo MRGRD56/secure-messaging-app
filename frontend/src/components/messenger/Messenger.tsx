@@ -92,6 +92,10 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
         }, 0);
     };
 
+    const showNotification = () => {
+        //TODO
+    };
+
     const handleNewMessages = () => {
         const messagesDiv = messagesContainerRef.current;
         if (!messagesDiv) {
