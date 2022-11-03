@@ -22,24 +22,22 @@ const Messages: FunctionComponent<Props> = ({clientId, messages, className}) => 
                     const isMyMessage = clientId === message.clientId;
 
                     const hasNextMessageIndent = nextMessage !== undefined && nextMessage.clientId !== message.clientId;
-                    const isAvatarShown = !isMyMessage && (nextMessage === undefined || nextMessage.clientId !== message.clientId);
+                    const isAvatarShown = nextMessage === undefined || nextMessage.clientId !== message.clientId;
 
                     return (
                         <div
                             key={index}
                             className={classNames(
                                 styles.messageContainer,
-                                isMyMessage && styles.messageContainerMine,
+                                isMyMessage && styles.mine,
                                 hasNextMessageIndent && styles.messageContainerNextMessageIndent
                             )}
                         >
-                            {!isMyMessage && (
-                                <div className={styles.avatarWrapper}>
-                                    {isAvatarShown && (
-                                        <Gravatar email={message.clientId} className={styles.avatar}/>
-                                    )}
-                                </div>
-                            )}
+                            <div className={classNames(styles.avatarWrapper, isMyMessage && styles.mine)}>
+                                {isAvatarShown && (
+                                    <Gravatar email={message.clientId} className={classNames(styles.avatar, isMyMessage && styles.mine)}/>
+                                )}
+                            </div>
                             <Message message={message} isMine={isMyMessage}/>
                         </div>
                     );
