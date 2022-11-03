@@ -7,3 +7,29 @@
         padding: 5px 0;
     }
 }
+
+.messageContainer {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-end;
+
+    &.messageContainerMine {
+        flex-direction: row-reverse;
+    }
+
+    &.messageContainerNextMessageIndent {
+        margin-block-end: 3px;
+    }
+}
+
+.avatarWrapper {
+    width: 38px;
+    height: 42px;
+}
+
+.avatar {
+    border-radius: 100%;
+    padding: 3px 5px 3px 3px;
+    width: 30px;
+    height: 30px;
+}
