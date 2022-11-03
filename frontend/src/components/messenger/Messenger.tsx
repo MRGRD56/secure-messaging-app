@@ -7,7 +7,7 @@ import moment from 'moment';
 import getNewUpdates from '../../actions/api/getNewUpdates';
 import MessageInput from '../messageInput/MessageInput';
 import classNames from 'classnames';
-import {useDebounce, useDidMount, useLocalstorageState} from 'rooks';
+import {useDebounce, useDidMount, useLocalstorageState, useThrottle} from 'rooks';
 import {v4} from 'uuid';
 import axios from 'axios';
 import useQueryParams from '../../hooks/useQueryParams';
@@ -107,7 +107,7 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
         }, 0);
     };
 
-    const handleTypingDebounced = useDebounce(sendTyping, 0);
+    const [handleTypingDebounced] = useThrottle(sendTyping, 2000);
     const handleTyping = () => {
         handleTypingDebounced({chatId, clientId});
     };
