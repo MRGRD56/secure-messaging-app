@@ -15,6 +15,7 @@ import UpdateOut from './common/types/UpdateOut';
 import TypingIn from './common/types/TypingIn';
 import validateBaseIn from './utils/validateBaseIn';
 import isNonEmptyString from './utils/isNonEmptyString';
+import {Request} from 'express';
 
 const GET_MESSAGES_TIMEOUT = 25_000; //ms
 const PORT = 9021;
@@ -44,8 +45,8 @@ app.post('/api/message/send', (req, res) => {
         return;
     }
 
-    if (!validateClientId(body.clientId, req.ip)) {
-        res.status(403).send('This clientId is already used by another client');
+    if (!validateClientId(body.clientId, req)) {
+        res.status(403).send('CLIENT_ID_ALREADY_USED');
         return;
     }
 
@@ -70,8 +71,8 @@ app.post('/api/message/typing', (req, res) => {
         return;
     }
 
-    if (!validateClientId(body.clientId, req.ip)) {
-        res.status(403).send('This clientId is already used by another client');
+    if (!validateClientId(body.clientId, req)) {
+        res.status(403).send('CLIENT_ID_ALREADY_USED');
         return;
     }
 
@@ -94,8 +95,8 @@ app.post('/api/message/get-new', (req, res) => {
         return;
     }
 
-    if (!validateClientId(body.clientId, req.ip)) {
-        res.status(403).send('This clientId is already used by another client');
+    if (!validateClientId(body.clientId, req)) {
+        res.status(403).send('CLIENT_ID_ALREADY_USED');
         return;
     }
 
@@ -135,12 +136,15 @@ const getNewUpdates =
             socket.on('close', closeHandler);
         });
 
-const validateClientId = (clientId: string, ip: string): boolean => {
+const validateClientId = (clientId: string, req: Request): boolean => {
+    const ip = getIp(req);
+
     const {clients} = state;
 
     const existingClient: Client | undefined = clients[clientId];
 
     if (existingClient !== undefined && existingClient.ipAddress !== ip) {
+        console.log('Existing client with another IP', {clientIp: ip, usedUp: existingClient.ipAddress});
         return false;
     }
 
@@ -154,3 +158,13 @@ const validateClientId = (clientId: string, ip: string): boolean => {
 app.listen(PORT, () => {
     console.log(`Listening on port ${PORT}`);
 });
+
+const getIp = (req: Request) => {
+    const ip = req.ip.replace(/^::ffff:/, '');
+
+    if (ip === '::1') {
+        return '127.0.0.1';
+    }
+
+    return ip;
+};

@@ -214,9 +214,18 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
                         handleNewTypings(newTypings);
                     }
                 } catch (error) {
-                    if (!axios.isCancel(error)) {
-                        throw error;
+                    if (axios.isCancel(error)) {
+                        continue;
                     }
+
+                    if (axios.isAxiosError(error)) {
+                        if (error.response?.data === 'CLIENT_ID_ALREADY_USED') {
+                            setClientId(v4());
+                            continue;
+                        }
+                    }
+
+                    throw error;
                 }
             }
         })();
@@ -242,22 +251,24 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
             {!urlSecretKey && (
                 <TopPanel secretKey={manualSecretKey} onSecretKeyChange={setManualSecretKey}/>
             )}
+            <div className={styles.typingContainer}>
+                {Object.keys(typingClients).length > 0 && (
+                    <>
+                        {Object.values(typingClients).map((typing, index) => (
+                            <div key={index} className={styles.typingClient}>
+                                <Gravatar email={typing.clientId} className={styles.typingAvatar}/>
+                            </div>
+                        ))}
+                        <div className={styles.typingText}>
+                            {'  '}{Object.keys(typingClients).length === 1 ? 'is' : 'are'} typing
+                            <img src={typingIcon} alt="..." className={styles.typingIcon}/>
+                        </div>
+                    </>
+                )}
+            </div>
             <div className={styles.messagesContainer} ref={messagesContainerRef}>
                 <Messages className={styles.messages} messages={messages} clientId={clientId}/>
             </div>
-            {Object.keys(typingClients).length > 0 && (
-                <div className={styles.typingContainer}>
-                    {Object.values(typingClients).map((typing, index) => (
-                        <div key={index} className={styles.typingClient}>
-                            <Gravatar email={typing.clientId} className={styles.typingAvatar}/>
-                        </div>
-                    ))}
-                    <div className={styles.typingText}>
-                        {'  '}{Object.keys(typingClients).length === 1 ? 'is' : 'are'} typing
-                        <img src={typingIcon} alt="..." className={styles.typingIcon}/>
-                    </div>
-                </div>
-            )}
             <div className={styles.inputContainer}>
                 <MessageInput className={styles.messageInput}
                               value={newMessage}
