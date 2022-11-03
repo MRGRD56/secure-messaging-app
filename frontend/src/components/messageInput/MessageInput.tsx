@@ -1,9 +1,9 @@
-import React, {ChangeEvent, FormEvent, FunctionComponent, HTMLProps, KeyboardEvent, useCallback, useRef} from 'react';
+import React, {ChangeEvent, FormEvent,
+    FormEventHandler, FunctionComponent, HTMLProps, KeyboardEvent, useCallback, useRef} from 'react';
 import classNames from 'classnames';
 import styles from './MessageInput.module.scss';
 import SendIcon from '@mui/icons-material/Send';
 import IconButton from '@mui/material/IconButton';
-import {FormEventHandler} from '.react-exGgXXJA';
 
 interface Props extends Omit<HTMLProps<HTMLFormElement>, 'onSubmit' | 'value' | 'onChange' | 'onInput'> {
     onSend(): void;
