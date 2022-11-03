@@ -3,15 +3,17 @@ import classNames from 'classnames';
 import styles from './MessageInput.module.scss';
 import SendIcon from '@mui/icons-material/Send';
 import IconButton from '@mui/material/IconButton';
+import {FormEventHandler} from '.react-exGgXXJA';
 
-interface Props extends Omit<HTMLProps<HTMLFormElement>, 'onSubmit' | 'value' | 'onChange'> {
+interface Props extends Omit<HTMLProps<HTMLFormElement>, 'onSubmit' | 'value' | 'onChange' | 'onInput'> {
     onSend(): void;
     value: string;
     onTextChange(value: string): void;
     secretKey: string;
+    onInput?: FormEventHandler<HTMLTextAreaElement>;
 }
 
-const MessageInput: FunctionComponent<Props> = ({onSend, className, value, onTextChange, secretKey, ...props}) => {
+const MessageInput: FunctionComponent<Props> = ({onSend, className, value, onTextChange, secretKey, onInput, ...props}) => {
     const inputRef = useRef<HTMLTextAreaElement>(null);
 
     const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -58,6 +60,7 @@ const MessageInput: FunctionComponent<Props> = ({onSend, className, value, onTex
                 onKeyDown={handleInputKeyDown}
                 ref={inputRef}
                 id="message-input-field"
+                onInput={onInput}
             />
             <IconButton type="submit"
                         color={value && secretKey ? 'primary' : 'default'}

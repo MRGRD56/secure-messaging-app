@@ -1,7 +1,7 @@
-interface MessageIn {
-    clientId: string;
+import UpdateInBase from './UpdateInBase';
+
+interface MessageIn extends UpdateInBase {
     encryptedText: string;
-    keyHash: string;
 }
 
 export default MessageIn;

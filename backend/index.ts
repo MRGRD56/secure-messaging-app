@@ -1,5 +1,4 @@
 import * as express from 'express';
-import {isEmpty, isString} from 'lodash';
 import * as moment from 'moment';
 import * as cors from 'cors';
 import {v4} from 'uuid';
@@ -11,12 +10,16 @@ import Client from './common/types/Client';
 import MessageOut from './common/types/MessageOut';
 import TypingOut from './common/types/TypingOut';
 import MessageIn from './common/types/MessageIn';
-import GetNewMessagesParams from './common/types/GetNewMessagesParams';
+import GetNewUpdatesParams from './common/types/GetNewUpdatesParams';
+import UpdateOut from './common/types/UpdateOut';
+import TypingIn from './common/types/TypingIn';
+import validateBaseIn from './utils/validateBaseIn';
+import isNonEmptyString from './utils/isNonEmptyString';
 
 const GET_MESSAGES_TIMEOUT = 25_000; //ms
 const PORT = 9021;
 
-events.EventEmitter.defaultMaxListeners = 50;
+events.EventEmitter.defaultMaxListeners = 0;
 
 const app = express();
 app.use(express.json());
@@ -24,25 +27,19 @@ app.use(cors());
 
 interface BackendState {
     clients: Record<string, Client>;
-    newMessage$: Subject<MessageOut[]>;
-    typing$: Subject<TypingOut[]>;
+    newUpdate$: Subject<UpdateOut[]>;
 }
 
 const state: BackendState = {
     clients: {},
-    newMessage$: new Subject<MessageOut[]>(),
-    typing$: new Subject<TypingOut[]>()
+    newUpdate$: new Subject<UpdateOut[]>()
 };
 
 app.post('/api/message/send', (req, res) => {
     const body = req.body as MessageIn;
 
-    if (!isString(body.clientId)
-        || isEmpty(body.clientId)
-        || !isString(body.keyHash)
-        || isEmpty(body.keyHash)
-        || !isString(body.encryptedText)
-        || isEmpty(body.encryptedText)) {
+    if (!validateBaseIn(body)
+        || !isNonEmptyString(body.encryptedText)) {
         res.status(400).send('Invalid request body');
         return;
     }
@@ -53,24 +50,22 @@ app.post('/api/message/send', (req, res) => {
     }
 
     const message: MessageOut = {
+        type: 'message',
         clientId: body.clientId,
         encryptedText: body.encryptedText,
-        keyHash: body.keyHash,
+        chatId: body.chatId,
         date: moment().format(),
         id: v4()
     };
 
-    state.newMessage$.next([message]);
+    state.newUpdate$.next([message]);
     res.sendStatus(200);
 });
 
-app.post('/api/message/get-new', (req, res) => {
-    const body = req.body as GetNewMessagesParams;
+app.post('/api/message/typing', (req, res) => {
+    const body = req.body as TypingIn;
 
-    if (!isString(body.keyHash)
-        || isEmpty(body.keyHash)
-        || !isString(body.clientId)
-        || isEmpty(body.clientId)) {
+    if (!validateBaseIn(body)) {
         res.status(400).send('Invalid request body');
         return;
     }
@@ -80,20 +75,44 @@ app.post('/api/message/get-new', (req, res) => {
         return;
     }
 
-    getNewMessages(body, req.socket).then(newMessages => {
-        res.status(200).send(newMessages);
+    const typing: TypingOut = {
+        type: 'typing',
+        clientId: body.clientId,
+        chatId: body.chatId,
+        date: moment().format()
+    };
+
+    state.newUpdate$.next([typing]);
+    res.sendStatus(200);
+});
+
+app.post('/api/message/get-new', (req, res) => {
+    const body = req.body as GetNewUpdatesParams;
+
+    if (!validateBaseIn(body)) {
+        res.status(400).send('Invalid request body');
+        return;
+    }
+
+    if (!validateClientId(body.clientId, req.ip)) {
+        res.status(403).send('This clientId is already used by another client');
+        return;
+    }
+
+    getNewUpdates(body, req.socket).then(updates => {
+        res.status(200).send(updates);
     });
 });
 
-const getNewMessages =
-    async (params: GetNewMessagesParams, socket: net.Socket): Promise<MessageOut[]> =>
+const getNewUpdates =
+    async (params: GetNewUpdatesParams, socket: net.Socket): Promise<UpdateOut[]> =>
         new Promise(resolve => {
-            const {keyHash, clientId} = params;
+            const {chatId, clientId} = params;
 
-            const newMessageSubscription = state.newMessage$
+            const newMessageSubscription = state.newUpdate$
                 .pipe(
                     rxjs.map(messages => messages.filter(message => {
-                        return message.keyHash === keyHash && message.clientId !== clientId;
+                        return message.chatId === chatId && message.clientId !== clientId;
                     })),
                     rxjs.filter(messages => Boolean(messages) && messages.length > 0)
                 )

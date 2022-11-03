@@ -1,6 +1,7 @@
-interface TypingOut {
-    clientId: string;
-    date: string;
+import UpdateOutBase from './UpdateOutBase';
+
+interface TypingOut extends UpdateOutBase {
+    type: 'typing';
 }
 
 export default TypingOut;

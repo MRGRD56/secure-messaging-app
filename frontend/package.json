@@ -23,6 +23,7 @@
     "crypto": "^1.0.1",
     "crypto-js": "^4.1.1",
     "generate-password-browser": "^1.1.0",
+    "immer": "^9.0.16",
     "js-base64": "^3.7.2",
     "lodash": "^4.17.21",
     "moment": "^2.29.3",

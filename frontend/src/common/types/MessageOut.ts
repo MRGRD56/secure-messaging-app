@@ -1,7 +1,8 @@
 import MessageIn from './MessageIn';
+import UpdateOutBase from './UpdateOutBase';
 
-interface MessageOut extends MessageIn {
-    date: string;
+interface MessageOut extends MessageIn, UpdateOutBase {
+    type: 'message';
     id: string;
 }
 

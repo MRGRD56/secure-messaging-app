@@ -5,6 +5,7 @@
   "license": "MIT",
   "scripts": {
     "backend:dev": "ts-node ./index.ts",
+    "backend:dev-dmn": "nodemon ./index.ts",
     "backend:build": "tsc",
     "backend:start": "node ./dist/index.js"
   },

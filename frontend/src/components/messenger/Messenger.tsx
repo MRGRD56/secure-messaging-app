@@ -4,19 +4,29 @@ import Messages from '../messages/Messages';
 import useAutoRef from '../../hooks/useAutoRef';
 import sendMessage from '../../actions/api/sendMessage';
 import moment from 'moment';
-import getNewMessages from '../../actions/api/getNewMessages';
+import getNewUpdates from '../../actions/api/getNewUpdates';
 import MessageInput from '../messageInput/MessageInput';
 import classNames from 'classnames';
-import {useDidMount, useLocalstorageState} from 'rooks';
+import {useDebounce, useDidMount, useLocalstorageState} from 'rooks';
 import {v4} from 'uuid';
 import axios from 'axios';
 import useQueryParams from '../../hooks/useQueryParams';
-import {isString} from 'lodash';
+import {isString, omit} from 'lodash';
 import {Base64} from 'js-base64';
 import TopPanel from '../topPanel/TopPanel';
 import MessageOut from '../../common/types/MessageOut';
 import MessageIn from '../../common/types/MessageIn';
 import getSwRegistration from '../../utils/getSwRegistration';
+import TypingOut from '../../common/types/TypingOut';
+import sendTyping from '../../actions/api/sendTyping';
+import sha256 from '../../utils/sha256';
+import Gravatar from 'react-gravatar';
+import typingIcon from '../../assets/typing_6.gif';
+
+interface TypingClient {
+    clientId: string;
+    cancellationId: number;
+}
 
 interface Props extends HTMLProps<HTMLDivElement> {
 }
@@ -25,12 +35,15 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
     const {kb: querySecretKeyBase64, k: querySecretKeyText} = useQueryParams();
 
     const [messages, setMessages] = useState<MessageOut[]>([]);
+    const [typingClients, setTypingClients] = useState<Record<string, TypingClient>>({});
+
     const [manualSecretKey, setManualSecretKey] = useLocalstorageState<string>('secure-messaging-app:secretKey', '');
     const [urlSecretKey, setUrlSecretKey] = useState<string>();
     const [clientId, setClientId] = useLocalstorageState<string>('secure-messaging-app:clientId', v4());
     const [newMessage, setNewMessage] = useState<string>('');
 
     const actualSecretKey = urlSecretKey || manualSecretKey;
+    const chatId = sha256(actualSecretKey);
 
     const requestParamsRef = useAutoRef({actualSecretKey});
     const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -66,20 +79,19 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
             return;
         }
 
-        const secretKey = actualSecretKey;
-
         const sentMessage: MessageIn = {
             clientId,
-            keyHash: secretKey,
+            chatId,
             encryptedText: newMessage
         };
 
-        sendMessage(sentMessage, secretKey);
+        sendMessage(sentMessage, actualSecretKey);
 
         setMessages(messages => [
             ...messages,
             {
                 ...sentMessage,
+                type: 'message',
                 date: moment().format(),
                 id: 'unknown'
             }
@@ -95,6 +107,11 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
         }, 0);
     };
 
+    const handleTypingDebounced = useDebounce(sendTyping, 0);
+    const handleTyping = () => {
+        handleTypingDebounced({chatId, clientId});
+    };
+
     const showNotification = (newMessages: MessageOut[]) => {
         if (document.hidden) {
             getSwRegistration().then(registration => {
@@ -108,6 +125,7 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
     };
 
     const handleNewMessages = (newMessages: MessageOut[]) => {
+        stopClientTypings(newMessages.map(({clientId}) => clientId));
         showNotification(newMessages);
 
         const messagesDiv = messagesContainerRef.current;
@@ -122,6 +140,50 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
         }
     };
 
+    const stopClientTypings = (clientIds?: string[]): void => {
+        const clientIdsSet = clientIds && new Set(clientIds);
+
+        setTypingClients(currentTypingClients => {
+            return Object.entries(currentTypingClients).reduce((result, typingClient) => {
+                if (clientIdsSet && !clientIdsSet.has(typingClient[0])) {
+                    result[typingClient[0]] = typingClient[1];
+                    return result;
+                }
+
+                window.clearTimeout(typingClient[1].cancellationId);
+                return result;
+            }, {} as Record<string, TypingClient>);
+        });
+    };
+
+    const handleNewTypings = (newTypings: TypingOut[]) => {
+        setTypingClients(currentTypingClients => {
+            return {
+                ...currentTypingClients,
+                ...newTypings.reduce((result, typing) => {
+                    const alreadyTypingClient = currentTypingClients[typing.clientId];
+
+                    if (alreadyTypingClient) {
+                        window.clearTimeout(alreadyTypingClient.cancellationId);
+                    }
+
+                    const cancellationId = window.setTimeout(() => {
+                        setTypingClients(clients => {
+                            return omit(clients, [typing.clientId]);
+                        });
+                    }, 3000);
+
+                    result[typing.clientId] = {
+                        clientId: typing.clientId,
+                        cancellationId
+                    };
+
+                    return result;
+                }, {} as Record<string, TypingClient>)
+            };
+        });
+    };
+
     useDidMount(() => {
         (async () => {
             while (true) {
@@ -130,10 +192,12 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
 
                     const abortController = new AbortController();
                     newMessageRequestAbortControllerRef.current = abortController;
-                    const newMessages = await getNewMessages({
+                    const newUpdates = await getNewUpdates({
                         clientId,
-                        keyHash: secretKey
+                        chatId: secretKey
                     }, secretKey, abortController.signal);
+
+                    const newMessages = newUpdates.filter(({type}) => type === 'message') as MessageOut[];
 
                     setMessages(messages => [
                         ...messages,
@@ -142,6 +206,12 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
 
                     if (newMessages.length > 0) {
                         handleNewMessages(newMessages);
+                    }
+
+                    const newTypings = newUpdates.filter(({type}) => type === 'typing') as TypingOut[];
+
+                    if (newTypings.length > 0) {
+                        handleNewTypings(newTypings);
                     }
                 } catch (error) {
                     if (!axios.isCancel(error)) {
@@ -158,6 +228,7 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
             return;
         }
 
+        stopClientTypings();
         if (newMessageRequestAbortTimeoutRef.current !== undefined) {
             window.clearTimeout(newMessageRequestAbortTimeoutRef.current);
         }
@@ -174,12 +245,27 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
             <div className={styles.messagesContainer} ref={messagesContainerRef}>
                 <Messages className={styles.messages} messages={messages} clientId={clientId}/>
             </div>
+            {Object.keys(typingClients).length > 0 && (
+                <div className={styles.typingContainer}>
+                    {Object.values(typingClients).map((typing, index) => (
+                        <div key={index} className={styles.typingClient}>
+                            <Gravatar email={typing.clientId} className={styles.typingAvatar}/>
+                        </div>
+                    ))}
+                    <div className={styles.typingText}>
+                        {'  '}{Object.keys(typingClients).length === 1 ? 'is' : 'are'} typing
+                        <img src={typingIcon} alt="..." className={styles.typingIcon}/>
+                    </div>
+                </div>
+            )}
             <div className={styles.inputContainer}>
                 <MessageInput className={styles.messageInput}
                               value={newMessage}
                               onTextChange={setNewMessage}
                               onSend={handleSend}
-                              secretKey={actualSecretKey}/>
+                              secretKey={actualSecretKey}
+                              onInput={handleTyping}
+                />
             </div>
         </div>
     );
