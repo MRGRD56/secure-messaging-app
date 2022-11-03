@@ -7,7 +7,7 @@ import moment from 'moment';
 import getNewUpdates from '../../actions/api/getNewUpdates';
 import MessageInput from '../messageInput/MessageInput';
 import classNames from 'classnames';
-import {useDebounce, useDidMount, useLocalstorageState, useThrottle} from 'rooks';
+import {useDidMount, useLocalstorageState, useThrottle} from 'rooks';
 import {v4} from 'uuid';
 import axios from 'axios';
 import useQueryParams from '../../hooks/useQueryParams';
