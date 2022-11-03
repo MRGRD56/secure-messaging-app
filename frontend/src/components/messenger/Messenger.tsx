@@ -7,7 +7,7 @@ import moment from 'moment';
 import getNewMessages from '../../actions/api/getNewMessages';
 import MessageInput from '../messageInput/MessageInput';
 import classNames from 'classnames';
-import {useDidMount, useLocalstorageState, useSessionstorageState} from 'rooks';
+import {useDidMount, useLocalstorageState} from 'rooks';
 import {v4} from 'uuid';
 import axios from 'axios';
 import useQueryParams from '../../hooks/useQueryParams';
@@ -27,7 +27,7 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
     const [messages, setMessages] = useState<MessageOut[]>([]);
     const [manualSecretKey, setManualSecretKey] = useLocalstorageState<string>('secure-messaging-app:secretKey', '');
     const [urlSecretKey, setUrlSecretKey] = useState<string>();
-    const [clientId, setClientId] = useSessionstorageState<string>('secure-messaging-app:clientId', v4());
+    const [clientId, setClientId] = useLocalstorageState<string>('secure-messaging-app:clientId', v4());
     const [newMessage, setNewMessage] = useState<string>('');
 
     const actualSecretKey = urlSecretKey || manualSecretKey;
