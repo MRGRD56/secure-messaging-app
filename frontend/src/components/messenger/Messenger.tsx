@@ -16,6 +16,7 @@ import {Base64} from 'js-base64';
 import TopPanel from '../topPanel/TopPanel';
 import MessageOut from '../../common/types/MessageOut';
 import MessageIn from '../../common/types/MessageIn';
+import getSwRegistration from '../../utils/getSwRegistration';
 
 interface Props extends HTMLProps<HTMLDivElement> {
 }
@@ -38,6 +39,8 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
     const canChangeSecretKey = useRef<boolean>(false);
 
     useDidMount(() => {
+        Notification?.requestPermission();
+
         const isQuerySecretKeyTextUsed = isString(querySecretKeyText) && querySecretKeyText.length > 0;
         const isQuerySecretKeyBase64Used = isString(querySecretKeyBase64) && querySecretKeyBase64.length > 0;
 
@@ -92,11 +95,19 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
         }, 0);
     };
 
-    const showNotification = () => {
-        //TODO
+    const showNotification = (newMessages: MessageOut[]) => {
+        if (document.hidden) {
+            getSwRegistration().then(registration => {
+                registration.showNotification('New message', {
+                    body: newMessages.map(message => message.encryptedText).join('\n\n')
+                });
+            });
+        }
     };
 
-    const handleNewMessages = () => {
+    const handleNewMessages = (newMessages: MessageOut[]) => {
+        showNotification(newMessages);
+
         const messagesDiv = messagesContainerRef.current;
         if (!messagesDiv) {
             return;
@@ -128,7 +139,7 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
                     ]);
 
                     if (newMessages.length > 0) {
-                        handleNewMessages();
+                        handleNewMessages(newMessages);
                     }
                 } catch (error) {
                     if (!axios.isCancel(error)) {
