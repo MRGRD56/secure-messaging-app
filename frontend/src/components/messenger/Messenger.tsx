@@ -99,7 +99,9 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
         if (document.hidden) {
             getSwRegistration().then(registration => {
                 registration.showNotification('New message', {
-                    body: newMessages.map(message => message.encryptedText).join('\n\n')
+                    body: newMessages.map(message => message.encryptedText).join('\n\n'),
+                    silent: false,
+                    vibrate: [400, 200, 400]
                 });
             });
         }
