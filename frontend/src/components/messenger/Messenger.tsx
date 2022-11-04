@@ -53,7 +53,7 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
     const actualSecretKey = urlSecretKey || manualSecretKey;
     const chatId = hashSecretKey(actualSecretKey);
 
-    const requestParamsRef = useAutoRef({actualSecretKey});
+    const requestParamsRef = useAutoRef({actualSecretKey, chatId, clientId});
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const newMessageRequestAbortControllerRef = useRef<AbortController>();
     const newMessageRequestAbortTimeoutRef = useRef<number>();
@@ -89,8 +89,8 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
         }
 
         const sentMessage: MessageIn = {
-            clientId,
-            chatId,
+            clientId: requestParamsRef.current.clientId,
+            chatId: requestParamsRef.current.chatId,
             encryptedText: newMessageText,
             attachments: newMessageAttachments
         };
@@ -120,7 +120,10 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
 
     const [handleTypingDebounced] = useThrottle(sendTyping, 2000);
     const handleTyping = () => {
-        handleTypingDebounced({chatId, clientId});
+        handleTypingDebounced({
+            chatId: requestParamsRef.current.chatId,
+            clientId: requestParamsRef.current.clientId
+        });
     };
 
     const showNotification = (newMessages: MessageOut[]) => {
@@ -204,8 +207,8 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
                     const abortController = new AbortController();
                     newMessageRequestAbortControllerRef.current = abortController;
                     const newUpdates = await getNewUpdates({
-                        clientId,
-                        chatId
+                        clientId: requestParamsRef.current.clientId,
+                        chatId: requestParamsRef.current.chatId
                     }, secretKey, abortController.signal);
 
                     const newMessages = newUpdates.filter(({type}) => type === 'message') as MessageOut[];
