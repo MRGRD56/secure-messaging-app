@@ -26,28 +26,34 @@
     }
 
     .text {
+        max-width: 100%;
         font-size: 0.9rem;//15px;
         white-space: pre-wrap;
-    }
 
-    .messageAttachmentsContainer {
-        display: flex;
-        flex-direction: column;
-
-        .imageVideoAttachmentsContainer {
-            display: flex;
-            flex-wrap: wrap;
-        }
-
-        .audioAttachmentsContainer {
+        .messageAttachmentsContainer {
+            max-width: 100%;
             display: flex;
             flex-direction: column;
-        }
+            margin-top: 8px;
 
-        .fileAttachmentsContainer {
-            display: flex;
-            flex-direction: column;
-            align-items: stretch;
+            .imageVideoAttachmentsContainer {
+                max-width: 100%;
+                display: flex;
+                flex-wrap: wrap;
+            }
+
+            .audioAttachmentsContainer {
+                max-width: 100%;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .fileAttachmentsContainer {
+                max-width: 100%;
+                display: flex;
+                flex-direction: column;
+                align-items: stretch;
+            }
         }
     }
 

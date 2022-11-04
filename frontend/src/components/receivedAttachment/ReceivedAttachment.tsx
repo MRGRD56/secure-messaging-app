@@ -12,7 +12,7 @@ interface Props {
 
 export const ImageAttachment: FunctionComponent<Props> = ({attachment}) => {
     return (
-        <div className={styles.attachmentImage}>
+        <div className={styles.attachmentImage} title={attachment.name}>
             <img src={attachment.content} alt={attachment.name} className={styles.attachmentImageSelf}/>
         </div>
     );
@@ -20,7 +20,7 @@ export const ImageAttachment: FunctionComponent<Props> = ({attachment}) => {
 
 export const VideoAttachment: FunctionComponent<Props> = ({attachment}) => {
     return (
-        <div className={styles.attachmentVideo}>
+        <div className={styles.attachmentVideo} title={attachment.name}>
             <video src={attachment.content} className={styles.attachmentVideoSelf}/>
         </div>
     );
@@ -28,7 +28,7 @@ export const VideoAttachment: FunctionComponent<Props> = ({attachment}) => {
 
 export const AudioAttachment: FunctionComponent<Props> = ({attachment}) => {
     return (
-        <div className={styles.attachmentAudio}>
+        <div className={styles.attachmentAudio} title={attachment.name}>
             <audio src={attachment.content} className={styles.attachmentAudioSelf}/>
         </div>
     );
@@ -40,6 +40,7 @@ export const FileAttachment: FunctionComponent<Props> = ({attachment}) => {
                     component="a"
                     href={attachment.content}
                     download={attachment.name}
+                    title={attachment.name}
         >
             <div className={styles.attachmentFileSelf}>
                 <div className={styles.attachmentFileIconWrapper}>
