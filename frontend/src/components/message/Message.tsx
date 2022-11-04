@@ -27,7 +27,8 @@ const Message: FunctionComponent<Props> = ({message, isMine}) => {
         }) ?? [];
     }, [message.attachments]);
 
-    const imageVideoAttachments = attachments.filter(({type}) => type === FileType.IMAGE || type === FileType.VIDEO);
+    const imageAttachments = attachments.filter(({type}) => type === FileType.IMAGE);
+    const videoAttachments = attachments.filter(({type}) => type === FileType.VIDEO);
     const audioAttachments = attachments.filter(({type}) => type === FileType.AUDIO);
     const fileAttachments = attachments.filter(({type}) => type === FileType.OTHER);
 
@@ -37,9 +38,16 @@ const Message: FunctionComponent<Props> = ({message, isMine}) => {
                 {text}
                 {(attachments.length > 0) && (
                     <div className={styles.messageAttachmentsContainer}>
-                        {imageVideoAttachments.length > 0 && (
+                        {imageAttachments.length > 0 && (
                             <div className={styles.imageVideoAttachmentsContainer}>
-                                {imageVideoAttachments.map((attachment, index) => (
+                                {imageAttachments.map((attachment, index) => (
+                                    <ReceivedAttachment key={index} attachment={attachment}/>
+                                ))}
+                            </div>
+                        )}
+                        {videoAttachments.length > 0 && (
+                            <div className={styles.imageVideoAttachmentsContainer}>
+                                {videoAttachments.map((attachment, index) => (
                                     <ReceivedAttachment key={index} attachment={attachment}/>
                                 ))}
                             </div>
