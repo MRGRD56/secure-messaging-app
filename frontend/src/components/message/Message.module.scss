@@ -30,6 +30,27 @@
         white-space: pre-wrap;
     }
 
+    .messageAttachmentsContainer {
+        display: flex;
+        flex-direction: column;
+
+        .imageVideoAttachmentsContainer {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .audioAttachmentsContainer {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .fileAttachmentsContainer {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+        }
+    }
+
     .date {
         color: #96a4b0;
         font-size: 10px;

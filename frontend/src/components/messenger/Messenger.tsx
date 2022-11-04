@@ -1,4 +1,4 @@
-import React, {FunctionComponent, HTMLProps, useEffect, useRef, useState} from 'react';
+import React, {FunctionComponent, HTMLProps, useCallback, useEffect, useRef, useState} from 'react';
 import styles from './Messenger.module.scss';
 import Messages from '../messages/Messages';
 import useAutoRef from '../../hooks/useAutoRef';
@@ -11,7 +11,7 @@ import {useDidMount, useLocalstorageState, useThrottle} from 'rooks';
 import {v4} from 'uuid';
 import axios from 'axios';
 import useQueryParams from '../../hooks/useQueryParams';
-import {isString, omit} from 'lodash';
+import {isString, noop, omit} from 'lodash';
 import {Base64} from 'js-base64';
 import TopPanel from '../topPanel/TopPanel';
 import MessageOut from '../../common/types/MessageOut';
@@ -19,9 +19,13 @@ import MessageIn from '../../common/types/MessageIn';
 import getSwRegistration from '../../utils/getSwRegistration';
 import TypingOut from '../../common/types/TypingOut';
 import sendTyping from '../../actions/api/sendTyping';
-import sha256 from '../../utils/sha256';
+import hashSecretKey from '../../utils/hashSecretKey';
 import Gravatar from 'react-gravatar';
 import typingIcon from '../../assets/typing_6.gif';
+import MessageAttachment from '../../common/types/MessageAttachment';
+import NewAttachment from '../newAttachment/NewAttachment';
+import produce from 'immer';
+import canSendMessage from '../../utils/canSendMessage';
 
 interface TypingClient {
     clientId: string;
@@ -35,15 +39,17 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
     const {kb: querySecretKeyBase64, k: querySecretKeyText} = useQueryParams();
 
     const [messages, setMessages] = useState<MessageOut[]>([]);
+    // const [messages, setMessages] = useWriteableSessionStorageState<MessageOut[]>('secure-messaging-app:messages', []);
     const [typingClients, setTypingClients] = useState<Record<string, TypingClient>>({});
 
     const [manualSecretKey, setManualSecretKey] = useLocalstorageState<string>('secure-messaging-app:secretKey', '');
     const [urlSecretKey, setUrlSecretKey] = useState<string>();
     const [clientId, setClientId] = useLocalstorageState<string>('secure-messaging-app:clientId', v4());
-    const [newMessage, setNewMessage] = useState<string>('');
+    const [newMessageText, setNewMessageText] = useState<string>('');
+    const [newMessageAttachments, setNewMessageAttachments] = useState<MessageAttachment[]>([]);
 
     const actualSecretKey = urlSecretKey || manualSecretKey;
-    const chatId = sha256(actualSecretKey);
+    const chatId = hashSecretKey(actualSecretKey);
 
     const requestParamsRef = useAutoRef({actualSecretKey});
     const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -75,14 +81,15 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
     });
 
     const handleSend = async () => {
-        if (!newMessage.length) {
+        if (!canSendMessage(actualSecretKey, newMessageText, newMessageAttachments)) {
             return;
         }
 
         const sentMessage: MessageIn = {
             clientId,
             chatId,
-            encryptedText: newMessage
+            encryptedText: newMessageText,
+            attachments: newMessageAttachments
         };
 
         sendMessage(sentMessage, actualSecretKey);
@@ -97,7 +104,8 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
             }
         ]);
 
-        setNewMessage('');
+        setNewMessageText('');
+        setNewMessageAttachments([]);
 
         setTimeout(() => {
             const messagesContainer = messagesContainerRef.current;
@@ -194,7 +202,7 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
                     newMessageRequestAbortControllerRef.current = abortController;
                     const newUpdates = await getNewUpdates({
                         clientId,
-                        chatId: secretKey
+                        chatId
                     }, secretKey, abortController.signal);
 
                     const newMessages = newUpdates.filter(({type}) => type === 'message') as MessageOut[];
@@ -246,6 +254,20 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
         }, 1000);
     }, [actualSecretKey]);
 
+    const handleAttachmentRemove = useCallback((attachment: MessageAttachment) => () => {
+        const attachmentToRemove = attachment;
+
+        setNewMessageAttachments(attachments => {
+            return attachments.filter(attachment => {
+                return attachment !== attachmentToRemove;
+            });
+        });
+    }, []);
+
+    const handleAttachmentView = useCallback((attachment: MessageAttachment) => () => {
+
+    }, []);
+
     return (
         <div className={classNames(styles.container, className)} {...props}>
             {!urlSecretKey && (
@@ -270,12 +292,26 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
                 <Messages className={styles.messages} messages={messages} clientId={clientId}/>
             </div>
             <div className={styles.inputContainer}>
+                {newMessageAttachments.length > 0 && (
+                    <div className={styles.newAttachmentsContainer}>
+                        {newMessageAttachments.map((attachment, index) => (
+                            <NewAttachment
+                                key={index}
+                                attachment={attachment}
+                                onRemove={handleAttachmentRemove(attachment)}
+                                onView={handleAttachmentView(attachment)}
+                            />
+                        ))}
+                    </div>
+                )}
                 <MessageInput className={styles.messageInput}
-                              value={newMessage}
-                              onTextChange={setNewMessage}
+                              value={newMessageText}
+                              onTextChange={setNewMessageText}
                               onSend={handleSend}
                               secretKey={actualSecretKey}
                               onInput={handleTyping}
+                              attachments={newMessageAttachments}
+                              onAttachmentsChange={setNewMessageAttachments}
                 />
             </div>
         </div>

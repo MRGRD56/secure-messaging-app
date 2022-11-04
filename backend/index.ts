@@ -16,6 +16,7 @@ import TypingIn from './common/types/TypingIn';
 import validateBaseIn from './utils/validateBaseIn';
 import isNonEmptyString from './utils/isNonEmptyString';
 import {Request} from 'express';
+import {isArray, isNil} from 'lodash';
 
 const GET_MESSAGES_TIMEOUT = 25_000; //ms
 const PORT = 9021;
@@ -23,7 +24,11 @@ const PORT = 9021;
 events.EventEmitter.defaultMaxListeners = 0;
 
 const app = express();
-app.use(express.json());
+
+app.use(express.json({
+    limit: '50mb'
+}));
+
 app.use(cors());
 
 interface BackendState {
@@ -40,7 +45,7 @@ app.post('/api/message/send', (req, res) => {
     const body = req.body as MessageIn;
 
     if (!validateBaseIn(body)
-        || !isNonEmptyString(body.encryptedText)) {
+        || (!isNonEmptyString(body.encryptedText) && (!isNil(body.attachments) && !isArray(body.attachments)))) {
         res.status(400).send('Invalid request body');
         return;
     }
@@ -53,10 +58,11 @@ app.post('/api/message/send', (req, res) => {
     const message: MessageOut = {
         type: 'message',
         clientId: body.clientId,
-        encryptedText: body.encryptedText,
         chatId: body.chatId,
         date: moment().format(),
-        id: v4()
+        id: v4(),
+        encryptedText: body.encryptedText,
+        attachments: body.attachments
     };
 
     state.newUpdate$.next([message]);

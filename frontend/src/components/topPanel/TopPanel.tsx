@@ -73,7 +73,7 @@ const TopPanel: FunctionComponent<Props> = ({secretKey, onSecretKeyChange, class
         //     }
         // });
         handlePopoverClose();
-    }, [queryString]);
+    }, [handlePopoverClose]);
 
     return (
         <div className={classNames(styles.topPanel, className)} {...props}>
