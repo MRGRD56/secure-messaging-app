@@ -1,4 +1,4 @@
-import React, {FunctionComponent, useMemo} from 'react';
+import React, {FunctionComponent, useEffect, useMemo, useRef} from 'react';
 import moment from 'moment';
 import styles from './Message.module.scss';
 import classNames from 'classnames';
@@ -6,6 +6,7 @@ import MessageOut from '../../common/types/MessageOut';
 import ReceivedAttachment from '../receivedAttachment/ReceivedAttachment';
 import getFileType, {FileType} from '../../utils/getFileType';
 import {TypedMessageAttachment} from '../../common/types/MessageAttachment';
+import Viewer from 'viewerjs';
 
 interface Props {
     message: MessageOut;
@@ -18,6 +19,8 @@ const Message: FunctionComponent<Props> = ({message, isMine}) => {
         return moment(message.date).format('HH:mm');
     }, [message.date]);
 
+    const imageAttachmentsContainerRef = useRef<HTMLDivElement>(null);
+
     const attachments = useMemo<TypedMessageAttachment[]>(() => {
         return message.attachments?.map(attachment => {
             return {
@@ -27,10 +30,34 @@ const Message: FunctionComponent<Props> = ({message, isMine}) => {
         }) ?? [];
     }, [message.attachments]);
 
-    const imageAttachments = attachments.filter(({type}) => type === FileType.IMAGE);
-    const videoAttachments = attachments.filter(({type}) => type === FileType.VIDEO);
-    const audioAttachments = attachments.filter(({type}) => type === FileType.AUDIO);
-    const fileAttachments = attachments.filter(({type}) => type === FileType.OTHER);
+    const imageAttachments = useMemo(() => {
+        return attachments.filter(({type}) => type === FileType.IMAGE);
+    }, [attachments]);
+
+    const videoAttachments = useMemo(() => {
+        return attachments.filter(({type}) => type === FileType.VIDEO);
+    }, [attachments]);
+
+    const audioAttachments = useMemo(() => {
+        return attachments.filter(({type}) => type === FileType.AUDIO);
+    }, [attachments]);
+
+    const fileAttachments = useMemo(() => {
+        return attachments.filter(({type}) => type === FileType.OTHER);
+    }, [attachments]);
+
+    useEffect(() => {
+        const imageAttachmentsContainer = imageAttachmentsContainerRef.current;
+        if (!imageAttachmentsContainer) {
+            return;
+        }
+
+        const viewer = new Viewer(imageAttachmentsContainer);
+
+        return () => {
+            viewer.destroy();
+        };
+    }, [imageAttachments]);
 
     return (
         <div className={classNames(styles.message, {[styles.myMessage]: isMine})}>
@@ -39,7 +66,7 @@ const Message: FunctionComponent<Props> = ({message, isMine}) => {
                 {(attachments.length > 0) && (
                     <div className={styles.messageAttachmentsContainer}>
                         {imageAttachments.length > 0 && (
-                            <div className={styles.imageVideoAttachmentsContainer}>
+                            <div className={styles.imageVideoAttachmentsContainer} ref={imageAttachmentsContainerRef}>
                                 {imageAttachments.map((attachment, index) => (
                                     <ReceivedAttachment key={index} attachment={attachment}/>
                                 ))}

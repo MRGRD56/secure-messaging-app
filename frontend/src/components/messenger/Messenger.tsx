@@ -11,7 +11,7 @@ import {useDidMount, useLocalstorageState, useThrottle} from 'rooks';
 import {v4} from 'uuid';
 import axios from 'axios';
 import useQueryParams from '../../hooks/useQueryParams';
-import {isString, noop, omit} from 'lodash';
+import {isString, omit} from 'lodash';
 import {Base64} from 'js-base64';
 import TopPanel from '../topPanel/TopPanel';
 import MessageOut from '../../common/types/MessageOut';
@@ -24,8 +24,8 @@ import Gravatar from 'react-gravatar';
 import typingIcon from '../../assets/typing_6.gif';
 import MessageAttachment from '../../common/types/MessageAttachment';
 import NewAttachment from '../newAttachment/NewAttachment';
-import produce from 'immer';
 import canSendMessage from '../../utils/canSendMessage';
+import Viewer from 'viewerjs';
 
 interface TypingClient {
     clientId: string;
@@ -48,6 +48,8 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
     const [newMessageText, setNewMessageText] = useState<string>('');
     const [newMessageAttachments, setNewMessageAttachments] = useState<MessageAttachment[]>([]);
 
+    const hasNewMessageAttachments = newMessageAttachments.length > 0;
+
     const actualSecretKey = urlSecretKey || manualSecretKey;
     const chatId = hashSecretKey(actualSecretKey);
 
@@ -56,6 +58,7 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
     const newMessageRequestAbortControllerRef = useRef<AbortController>();
     const newMessageRequestAbortTimeoutRef = useRef<number>();
     const canChangeSecretKey = useRef<boolean>(false);
+    const newAttachmentsContainerRef = useRef<HTMLDivElement>(null);
 
     useDidMount(() => {
         Notification?.requestPermission();
@@ -240,6 +243,19 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
     });
 
     useEffect(() => {
+        const newAttachmentsContainer = newAttachmentsContainerRef.current;
+        if (!newAttachmentsContainer) {
+            return;
+        }
+
+        const viewer = new Viewer(newAttachmentsContainer);
+
+        return () => {
+            viewer.destroy();
+        };
+    }, [newMessageAttachments]);
+
+    useEffect(() => {
         if (!canChangeSecretKey.current) {
             canChangeSecretKey.current = true;
             return;
@@ -264,57 +280,75 @@ const Messenger: FunctionComponent<Props> = ({className, ...props}) => {
         });
     }, []);
 
-    const handleAttachmentView = useCallback((attachment: MessageAttachment) => () => {
-
+    const handleNewAttachmentView = useCallback((attachment: MessageAttachment, index: number) => () => {
+        // const fileType = getFileType(attachment.mime);
+        // if (fileType !== FileType.IMAGE) {
+        //     return;
+        // }
+        //
+        // const newAttachmentsContainer = newAttachmentsContainerRef.current;
+        // if (!newAttachmentsContainer) {
+        //     return;
+        // }
+        //
+        // const viewer = new Viewer(newAttachmentsContainer, {
+        //     ready() {
+        //         viewer.view(index);
+        //     }
+        // });
     }, []);
 
     return (
-        <div className={classNames(styles.container, className)} {...props}>
-            {!urlSecretKey && (
-                <TopPanel secretKey={manualSecretKey} onSecretKeyChange={setManualSecretKey}/>
-            )}
-            <div className={styles.typingContainer}>
-                {Object.keys(typingClients).length > 0 && (
-                    <>
-                        {Object.values(typingClients).map((typing, index) => (
-                            <div key={index} className={styles.typingClient}>
-                                <Gravatar email={typing.clientId} className={styles.typingAvatar}/>
+        <>
+            <div className={classNames(styles.container, className)} {...props}>
+                {!urlSecretKey && (
+                    <TopPanel secretKey={manualSecretKey} onSecretKeyChange={setManualSecretKey}/>
+                )}
+                <div className={styles.typingContainer}>
+                    {Object.keys(typingClients).length > 0 && (
+                        <>
+                            {Object.values(typingClients).map((typing, index) => (
+                                <div key={index} className={styles.typingClient}>
+                                    <Gravatar email={typing.clientId} className={styles.typingAvatar}/>
+                                </div>
+                            ))}
+                            <div className={styles.typingText}>
+                                {'  '}{Object.keys(typingClients).length === 1 ? 'is' : 'are'} typing
+                                <img src={typingIcon} alt="..." className={styles.typingIcon}/>
                             </div>
-                        ))}
-                        <div className={styles.typingText}>
-                            {'  '}{Object.keys(typingClients).length === 1 ? 'is' : 'are'} typing
-                            <img src={typingIcon} alt="..." className={styles.typingIcon}/>
+                        </>
+                    )}
+                </div>
+                <div className={styles.messagesContainer} ref={messagesContainerRef}>
+                    <Messages className={styles.messages} messages={messages} clientId={clientId}/>
+                </div>
+                <div className={styles.inputContainer}>
+                    {hasNewMessageAttachments && (
+                        <div className={styles.newAttachmentsContainerWrapper}>
+                            <div className={styles.newAttachmentsContainer} ref={newAttachmentsContainerRef}>
+                                {newMessageAttachments.map((attachment, index) => (
+                                    <NewAttachment
+                                        key={index}
+                                        attachment={attachment}
+                                        onRemove={handleAttachmentRemove(attachment)}
+                                        onView={handleNewAttachmentView(attachment, index)}
+                                    />
+                                ))}
+                            </div>
                         </div>
-                    </>
-                )}
+                    )}
+                    <MessageInput className={styles.messageInput}
+                                  value={newMessageText}
+                                  onTextChange={setNewMessageText}
+                                  onSend={handleSend}
+                                  secretKey={actualSecretKey}
+                                  onInput={handleTyping}
+                                  attachments={newMessageAttachments}
+                                  onAttachmentsChange={setNewMessageAttachments}
+                    />
+                </div>
             </div>
-            <div className={styles.messagesContainer} ref={messagesContainerRef}>
-                <Messages className={styles.messages} messages={messages} clientId={clientId}/>
-            </div>
-            <div className={styles.inputContainer}>
-                {newMessageAttachments.length > 0 && (
-                    <div className={styles.newAttachmentsContainer}>
-                        {newMessageAttachments.map((attachment, index) => (
-                            <NewAttachment
-                                key={index}
-                                attachment={attachment}
-                                onRemove={handleAttachmentRemove(attachment)}
-                                onView={handleAttachmentView(attachment)}
-                            />
-                        ))}
-                    </div>
-                )}
-                <MessageInput className={styles.messageInput}
-                              value={newMessageText}
-                              onTextChange={setNewMessageText}
-                              onSend={handleSend}
-                              secretKey={actualSecretKey}
-                              onInput={handleTyping}
-                              attachments={newMessageAttachments}
-                              onAttachmentsChange={setNewMessageAttachments}
-                />
-            </div>
-        </div>
+        </>
     );
 };
 

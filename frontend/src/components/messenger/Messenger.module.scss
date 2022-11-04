@@ -24,13 +24,18 @@
         //align-items: center;
         background: white;
 
-        .newAttachmentsContainer {
-            border-top: 1px solid #e2e3e4;
-            padding: 6px 8px;
-            display: flex;
-            flex-direction: row;
-            flex-wrap: nowrap;
-            gap: 6px;
+        .newAttachmentsContainerWrapper {
+            max-width: 100%;
+            overflow-x: auto;
+
+            .newAttachmentsContainer {
+                border-top: 1px solid #e2e3e4;
+                padding: 6px 8px;
+                display: flex;
+                flex-direction: row;
+                flex-wrap: nowrap;
+                gap: 6px;
+            }
         }
 
         .messageInput {

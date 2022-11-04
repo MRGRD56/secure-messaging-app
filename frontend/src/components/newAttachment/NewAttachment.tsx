@@ -21,7 +21,7 @@ const NewAttachment: FunctionComponent<Props> = ({attachment, onRemove, onView})
         <div className={styles.container} title={attachment.name}>
             {fileType === FileType.IMAGE ? (
                 <ButtonBase className={styles.imageAttachment} onClick={onView}>
-                    <img src={attachment.content} alt="Attachment" className={styles.imageAttachmentImg}/>
+                    <img src={attachment.content} alt={attachment.name} className={styles.imageAttachmentImg}/>
                     <div className={styles.imageAttachmentImgControl}>
                         <div className={styles.fileAttachment}>
                             <div className={styles.attachmentIcon}>

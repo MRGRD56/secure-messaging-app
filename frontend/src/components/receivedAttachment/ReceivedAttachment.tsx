@@ -12,9 +12,9 @@ interface Props {
 
 export const ImageAttachment: FunctionComponent<Props> = ({attachment}) => {
     return (
-        <div className={styles.attachmentImage} title={attachment.name}>
+        <ButtonBase className={styles.attachmentImage} title={attachment.name}>
             <img src={attachment.content} alt={attachment.name} className={styles.attachmentImageSelf}/>
-        </div>
+        </ButtonBase>
     );
 };
 
