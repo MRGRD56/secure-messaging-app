@@ -20,8 +20,10 @@ export const ImageAttachment: FunctionComponent<Props> = ({attachment}) => {
 
 export const VideoAttachment: FunctionComponent<Props> = ({attachment}) => {
     return (
-        <div className={styles.attachmentVideo} title={attachment.name}>
-            <video src={attachment.content} className={styles.attachmentVideoSelf}/>
+        <div className={styles.attachmentVideo}>
+            <video className={styles.attachmentVideoSelf} controls>
+                <source src={attachment.content}/>
+            </video>
         </div>
     );
 };
@@ -29,7 +31,9 @@ export const VideoAttachment: FunctionComponent<Props> = ({attachment}) => {
 export const AudioAttachment: FunctionComponent<Props> = ({attachment}) => {
     return (
         <div className={styles.attachmentAudio} title={attachment.name}>
-            <audio src={attachment.content} className={styles.attachmentAudioSelf}/>
+            <audio className={styles.attachmentAudioSelf} controls>
+                <source src={attachment.content}/>
+            </audio>
         </div>
     );
 };
